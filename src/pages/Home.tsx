@@ -97,6 +97,10 @@ function Home() {
   const currency = settings?.currency ?? 'BOB'
   const whatsapp = settings?.whatsapp_number?.replace(/\D/g, '')
 
+  useEffect(() => {
+    setCategoryId('all')
+  }, [q])
+
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>()
     for (const product of products) {
