@@ -220,11 +220,23 @@ export function ProductForm({ mode, product, categories }: Props) {
                 value={fields.description}
                 onChange={(e) => setField('description', e.target.value)}
               />
+              <Select
+                label="Categoría"
+                value={fields.category_id}
+                onChange={(e) => setField('category_id', e.target.value)}
+              >
+                <option value="">Sin categoría</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </Select>
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-semibold text-slate-800">Precios e inventario</h3>
+            <h3 className="mb-4 text-sm font-semibold text-slate-800">Precio</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 label="Precio (Bs.)"
@@ -244,6 +256,25 @@ export function ProductForm({ mode, product, categories }: Props) {
                 error={errors.compare_price}
                 onChange={(e) => setField('compare_price', e.target.value)}
               />
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Si el precio anterior es mayor al precio actual, el producto se mostrará como
+              oferta en la tienda.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-slate-800">Inventario</h3>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Input
+                label="Stock"
+                type="number"
+                min="0"
+                step="1"
+                value={fields.stock}
+                error={errors.stock}
+                onChange={(e) => setField('stock', e.target.value)}
+              />
               <Input
                 label="Costo (Bs.)"
                 type="number"
@@ -259,27 +290,6 @@ export function ProductForm({ mode, product, categories }: Props) {
                 value={fields.sku}
                 onChange={(e) => setField('sku', e.target.value)}
               />
-              <Input
-                label="Stock"
-                type="number"
-                min="0"
-                step="1"
-                value={fields.stock}
-                error={errors.stock}
-                onChange={(e) => setField('stock', e.target.value)}
-              />
-              <Select
-                label="Categoría"
-                value={fields.category_id}
-                onChange={(e) => setField('category_id', e.target.value)}
-              >
-                <option value="">Sin categoría</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </Select>
             </div>
           </div>
 

@@ -1,16 +1,55 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { getPublicCategories, getPublicProducts, getPublicSettings } from '../services/store'
 import type { PublicCategory, PublicProduct } from '../services/store'
 import { friendlyError } from '../utils/errors'
 import { useSeo } from '../hooks/useSeo'
-import { DEFAULT_PRIMARY, DEFAULT_SECONDARY } from '../utils/theme'
 import ProductCard from '../components/store/ProductCard'
-import { Alert, EmptyState, Skeleton } from '../components/ui/primitives'
+import { Alert } from '../components/ui/primitives'
+import {
+  ArrowRightIcon,
+  BanknoteIcon,
+  ChatIcon,
+  PackageIcon,
+  QrCodeIcon,
+} from '../components/store/icons'
+import { buildGeneralContactMessage, buildWhatsAppHref } from '../lib/whatsapp'
 import type { StoreSettings } from '../types'
 
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-5">
+      <h2 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">{title}</h2>
+      {subtitle && <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>}
+    </div>
+  )
+}
+
+function BenefitItem({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode
+  title: string
+  description: string
+}) {
+  return (
+    <div className="animate-fade-in-up flex items-start gap-3 rounded-2xl border border-white/10 bg-surface p-4 shadow-lg shadow-black/20 transition duration-300 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-black/30">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold">
+        {icon}
+      </span>
+      <div>
+        <p className="text-sm font-semibold text-ink">{title}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">{description}</p>
+      </div>
+    </div>
+  )
+}
+
 function Home() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const q = searchParams.get('q') ?? ''
 
   const [settings, setSettings] = useState<StoreSettings | null>(null)
@@ -56,8 +95,17 @@ function Home() {
   })
 
   const currency = settings?.currency ?? 'BOB'
-  const primary = settings?.primary_color ?? DEFAULT_PRIMARY
-  const secondary = settings?.secondary_color ?? DEFAULT_SECONDARY
+  const whatsapp = settings?.whatsapp_number?.replace(/\D/g, '')
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const product of products) {
+      if (product.category_id) {
+        counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1)
+      }
+    }
+    return counts
+  }, [products])
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase()
@@ -67,12 +115,12 @@ function Home() {
         !term ||
         product.name.toLowerCase().includes(term) ||
         (product.short_description?.toLowerCase().includes(term) ?? false) ||
-        (product.description?.toLowerCase().includes(term) ?? false)
+        (product.description?.toLowerCase().includes(term) ?? false) ||
+        (product.category?.name.toLowerCase().includes(term) ?? false)
       return okCategory && okSearch
     })
   }, [products, categoryId, q])
 
-  const featured = useMemo(() => products.filter((product) => product.featured), [products])
   const offers = useMemo(
     () => products.filter((product) => product.compare_price != null && product.compare_price > product.price),
     [products],
@@ -83,32 +131,74 @@ function Home() {
     document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const benefits = [
+    {
+      icon: <QrCodeIcon className="h-5 w-5" />,
+      title: 'Pago por QR',
+      description: 'Escanea y paga de forma rápida y segura.',
+    },
+    {
+      icon: <BanknoteIcon className="h-5 w-5" />,
+      title: 'Pago contra entrega',
+      description: 'Paga cuando recibas tu pedido.',
+    },
+    {
+      icon: <ChatIcon className="h-5 w-5" />,
+      title: 'Atención por WhatsApp',
+      description: 'Te atendemos directo por WhatsApp.',
+    },
+    {
+      icon: <PackageIcon className="h-5 w-5" />,
+      title: 'Productos disponibles',
+      description: 'Compra con la seguridad de que tu pedido existe.',
+    },
+  ]
+
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 sm:space-y-16">
       <section
-        className="rounded-3xl px-6 py-12 text-center text-white sm:py-16"
-        style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
+        className="animate-fade-in-up relative overflow-hidden rounded-3xl border border-white/10 px-6 py-14 text-center sm:py-20"
+        style={{
+          background:
+            'radial-gradient(80% 120% at 50% -10%, rgba(212, 175, 55, 0.18), transparent 60%), radial-gradient(60% 80% at 90% 110%, rgba(212, 175, 55, 0.08), transparent 55%), linear-gradient(160deg, #1d1d22 0%, #0b0b0d 75%)',
+        }}
       >
         {settings?.logo_url && (
           <img
             src={settings.logo_url}
             alt={storeName}
-            className="mx-auto mb-4 h-20 w-auto object-contain drop-shadow"
+            className="mx-auto mb-5 h-24 w-auto object-contain drop-shadow"
           />
         )}
-        <h1 className="text-3xl font-bold sm:text-4xl">
+        <span className="mx-auto inline-flex rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold-light">
+          Tienda en línea
+        </span>
+        <h1 className="mx-auto mt-4 max-w-2xl text-3xl font-bold tracking-tight text-ink sm:text-4xl">
           {settings?.welcome_text ?? storeName}
         </h1>
         {settings?.description && (
-          <p className="mx-auto mt-3 max-w-xl text-white/85">{settings.description}</p>
+          <p className="mx-auto mt-4 max-w-xl text-ink-muted">{settings.description}</p>
         )}
-        <a
-          href="#catalogo"
-          className="mt-6 inline-flex items-center rounded-full bg-white px-6 py-3 text-sm font-semibold shadow transition hover:bg-slate-50 active:scale-[0.98]"
-          style={{ color: primary }}
-        >
-          Ver productos
-        </a>
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a
+            href="#catalogo"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-semibold text-night shadow-lg shadow-gold/20 transition hover:bg-gold-light active:scale-[0.98] sm:w-auto"
+          >
+            Ver productos
+            <ArrowRightIcon className="h-4 w-4" />
+          </a>
+          {whatsapp && (
+            <a
+              href={buildWhatsAppHref(whatsapp, buildGeneralContactMessage(settings))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-ink transition hover:bg-gold/10 active:scale-[0.98] sm:w-auto"
+            >
+              <ChatIcon className="h-4 w-4" />
+              Contacto por WhatsApp
+            </a>
+          )}
+        </div>
       </section>
 
       {error && <Alert tone="error">{error}</Alert>}
@@ -117,56 +207,34 @@ function Home() {
         <SkeletonGrid />
       ) : (
         <>
-          {categories.length > 0 && (
-            <section aria-label="Categorías">
-              <h2 className="mb-4 text-xl font-bold text-gray-900">Categorías</h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => selectCategory(category.id)}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white text-left transition hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <div className="h-24 overflow-hidden bg-slate-100 sm:h-28">
-                      {category.image_url ? (
-                        <img
-                          src={category.image_url}
-                          alt={category.name}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-slate-200">
-                          {category.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <span className="truncate px-3 py-2.5 text-sm font-medium text-gray-800">
-                      {category.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {featured.length > 0 && (
-            <section aria-label="Productos destacados">
-              <h2 className="mb-4 text-xl font-bold text-gray-900">Destacados</h2>
-              <ProductGrid products={featured} currency={currency} primaryColor={primary} />
-            </section>
-          )}
+          <section aria-label="Por qué comprar con nosotros">
+            <SectionHeader
+              title="¿Por qué comprar con nosotros?"
+              subtitle="Todo lo que necesitas para una compra rápida y segura."
+            />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {benefits.map((benefit) => (
+                <BenefitItem key={benefit.title} {...benefit} />
+              ))}
+            </div>
+          </section>
 
           {offers.length > 0 && (
             <section id="ofertas" aria-label="Ofertas">
-              <h2 className="mb-4 text-xl font-bold text-gray-900">Ofertas</h2>
-              <ProductGrid products={offers} currency={currency} primaryColor={primary} />
+              <div className="mb-5 flex items-center gap-3">
+                <span className="h-px flex-1 bg-gradient-to-r from-transparent to-gold/40" />
+                <SectionHeader title="🔥 Ofertas" subtitle="Aprovecha precios especiales." />
+                <span className="h-px flex-1 bg-gradient-to-l from-transparent to-gold/40" />
+              </div>
+              <ProductGrid products={offers} currency={currency} />
             </section>
           )}
 
           <section id="catalogo" aria-label="Catálogo de productos">
-            <h2 className="mb-4 text-xl font-bold text-gray-900">Catálogo</h2>
+            <SectionHeader
+              title="🛍️ Todos nuestros productos"
+              subtitle={q.trim() ? `Resultados para "${q.trim()}"` : 'Explora todos nuestros productos.'}
+            />
 
             {categories.length > 0 && (
               <div className="mb-5 flex flex-wrap gap-2">
@@ -175,10 +243,9 @@ function Home() {
                   onClick={() => setCategoryId('all')}
                   className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                     categoryId === 'all'
-                      ? 'text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-gold text-night shadow-sm shadow-gold/20'
+                      : 'bg-surface-2 text-ink-muted hover:bg-white/10 hover:text-ink'
                   }`}
-                  style={categoryId === 'all' ? { backgroundColor: primary } : undefined}
                 >
                   Todas
                 </button>
@@ -189,10 +256,9 @@ function Home() {
                     onClick={() => setCategoryId(category.id)}
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                       categoryId === category.id
-                        ? 'text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-gold text-night shadow-sm shadow-gold/20'
+                        : 'bg-surface-2 text-ink-muted hover:bg-white/10 hover:text-ink'
                     }`}
-                    style={categoryId === category.id ? { backgroundColor: primary } : undefined}
                   >
                     {category.name}
                   </button>
@@ -201,21 +267,79 @@ function Home() {
             )}
 
             {filtered.length === 0 ? (
-              q.trim() ? (
-                <EmptyState
-                  title="No encontramos productos para tu búsqueda."
-                  description={`No hay resultados para "${q.trim()}". Prueba con otro término.`}
-                />
-              ) : (
-                <EmptyState
-                  title="Aún no hay productos"
-                  description="La tienda aún no tiene productos publicados. Vuelve pronto."
-                />
-              )
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold/10 text-xl">
+                  📦
+                </div>
+                <h3 className="text-sm font-semibold text-ink">
+                  {q.trim() ? 'No encontramos productos' : 'Aún no hay productos'}
+                </h3>
+                <p className="max-w-sm text-sm text-ink-muted">
+                  {q.trim()
+                    ? `No hay resultados para "${q.trim()}". Prueba con otro término.`
+                    : 'La tienda aún no tiene productos publicados. Vuelve pronto.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryId('all')
+                    setSearchParams({})
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-night transition hover:bg-gold-light active:scale-[0.98]"
+                >
+                  Ver todos los productos
+                </button>
+              </div>
             ) : (
-              <ProductGrid products={filtered} currency={currency} primaryColor={primary} />
+              <ProductGrid products={filtered} currency={currency} />
             )}
           </section>
+
+          {categories.length > 0 && (
+            <section aria-label="Comprar por categoría">
+              <SectionHeader
+                title="🛍️ Comprar por categorías"
+                subtitle="Encuentra rápido lo que buscas."
+              />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+                {categories.map((category) => {
+                  const count = categoryCounts.get(category.id) ?? 0
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => selectCategory(category.id)}
+                      className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-surface text-left shadow-lg shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-black/30"
+                    >
+                      <div className="relative h-24 overflow-hidden bg-surface-2 sm:h-28">
+                        {category.image_url ? (
+                          <img
+                            src={category.image_url}
+                            alt={category.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.05]"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-ink-muted/30">
+                            {category.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-night/70 to-transparent" />
+                        {count > 0 && (
+                          <span className="absolute right-2 top-2 rounded-full border border-gold/40 bg-night/80 px-2 py-0.5 text-[11px] font-semibold text-gold-light shadow-sm">
+                            {count} {count === 1 ? 'producto' : 'productos'}
+                          </span>
+                        )}
+                      </div>
+                      <span className="truncate px-3 py-2.5 text-sm font-medium text-ink">
+                        {category.name}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          )}
         </>
       )}
     </div>
@@ -225,21 +349,14 @@ function Home() {
 function ProductGrid({
   products,
   currency,
-  primaryColor,
 }: {
   products: PublicProduct[]
   currency: string
-  primaryColor: string
 }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
       {products.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          currency={currency}
-          primaryColor={primaryColor}
-        />
+        <ProductCard key={product.id} product={product} currency={currency} />
       ))}
     </div>
   )
@@ -249,12 +366,12 @@ function SkeletonGrid() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <Skeleton className="aspect-square w-full rounded-none" />
+        <div key={i} className="overflow-hidden rounded-2xl border border-white/10 bg-surface">
+          <div className="animate-pulse aspect-square w-full bg-surface-2" />
           <div className="space-y-2 p-3">
-            <Skeleton className="h-3 w-1/2" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/3" />
+            <div className="animate-pulse h-3 w-1/2 rounded-md bg-white/10" />
+            <div className="animate-pulse h-4 w-3/4 rounded-md bg-white/10" />
+            <div className="animate-pulse h-4 w-1/3 rounded-md bg-white/10" />
           </div>
         </div>
       ))}

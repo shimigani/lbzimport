@@ -90,6 +90,17 @@ export type OrderWithItems = Order & {
 
 export type StoreCurrency = 'BOB' | 'USD'
 
+export type WhatsAppMessageKey =
+  | 'order_cod'
+  | 'order_qr'
+  | 'order_whatsapp'
+  | 'proof_qr'
+  | 'product_inquiry'
+  | 'contact_customer'
+  | 'general_contact'
+
+export type WhatsAppMessages = Partial<Record<WhatsAppMessageKey, string>>
+
 export type StoreSettings = {
   id: string
   store_name: string
@@ -114,6 +125,7 @@ export type StoreSettings = {
   tiktok_pixel_id: string | null
   meta_pixel_id: string | null
   google_analytics_id: string | null
+  whatsapp_messages: WhatsAppMessages | null
   created_at: string
   updated_at: string
 }

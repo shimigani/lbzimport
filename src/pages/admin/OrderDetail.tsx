@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import type { OrderStatus, OrderWithItems } from '../../types'
+import type { OrderStatus, OrderWithItems, StoreSettings } from '../../types'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { friendlyError } from '../../utils/errors'
 import { ORDER_STATUSES, orderStatusLabel, orderStatusTone } from '../../utils/orderStatus'
 import { getOrder, updateOrderStatus } from '../../services/orders'
+import { getPublicSettings } from '../../services/store'
 import {
   Alert,
   Badge,
@@ -15,15 +16,32 @@ import {
   Skeleton,
 } from '../../components/ui/primitives'
 import { useToast } from '../../hooks/useToast'
+import { WhatsAppIcon } from '../../components/store/icons'
+import {
+  buildWhatsAppHref,
+  buildWhatsAppMessage,
+  getWhatsAppTemplate,
+} from '../../lib/whatsapp'
 
 export function OrderDetail() {
   const { id } = useParams<{ id: string }>()
   const { toast } = useToast()
   const [order, setOrder] = useState<OrderWithItems | null>(null)
+  const [settings, setSettings] = useState<StoreSettings | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('pending')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getPublicSettings().then((loaded) => {
+      if (active) setSettings(loaded)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   async function load() {
     if (!id) return
@@ -75,6 +93,19 @@ export function OrderDetail() {
     )
   }
 
+  const contactMessage = buildWhatsAppMessage(
+    getWhatsAppTemplate(settings?.whatsapp_messages, 'contact_customer'),
+    {
+      customer_name: order.customer_name,
+      order_number: order.order_number,
+      store_name: settings?.store_name ?? 'Mi Tienda',
+      store_phone: settings?.whatsapp_number ?? '',
+    },
+  )
+  const whatsappLink = order.customer_phone
+    ? buildWhatsAppHref(order.customer_phone, contactMessage) || null
+    : null
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -82,10 +113,8 @@ export function OrderDetail() {
           <Link to="/admin/orders" className="text-sm font-medium text-indigo-600 hover:underline">
             ← Volver a pedidos
           </Link>
-          <h1 className="mt-1 text-xl font-bold text-slate-900">{order.order_number}</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
-            Realizado el {formatDate(order.created_at)}
-          </p>
+          <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-900">{order.order_number}</h1>
+          <p className="mt-0.5 text-sm text-slate-500">Realizado el {formatDate(order.created_at)}</p>
         </div>
         <div className="flex items-center gap-2">
           <Select
@@ -162,33 +191,44 @@ export function OrderDetail() {
             <dl className="space-y-3 px-5 py-4 text-sm">
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-500">Nombre</dt>
-                <dd className="font-medium text-slate-800">{order.customer_name}</dd>
+                <dd className="mt-0.5 font-medium text-slate-800">{order.customer_name}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-500">Teléfono</dt>
-                <dd className="text-slate-700">{order.customer_phone}</dd>
+                <dd className="mt-0.5 text-slate-700">{order.customer_phone}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-500">Ciudad</dt>
-                <dd className="text-slate-700">{order.city || '—'}</dd>
+                <dd className="mt-0.5 text-slate-700">{order.city || '—'}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-500">Dirección</dt>
-                <dd className="text-slate-700">{order.address || '—'}</dd>
+                <dd className="mt-0.5 text-slate-700">{order.address || '—'}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-500">Referencia</dt>
-                <dd className="text-slate-700">{order.reference || '—'}</dd>
+                <dd className="mt-0.5 text-slate-700">{order.reference || '—'}</dd>
               </div>
+              {whatsappLink && (
+                <div>
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                  >
+                    <WhatsAppIcon className="h-4 w-4" />
+                    Contactar al cliente
+                  </a>
+                </div>
+              )}
             </dl>
           </Card>
 
           <Card>
             <CardHeader title="Estado del pedido" />
             <div className="px-5 py-4">
-              <Badge tone={orderStatusTone(order.status)}>
-                {orderStatusLabel(order.status)}
-              </Badge>
+              <Badge tone={orderStatusTone(order.status)}>{orderStatusLabel(order.status)}</Badge>
               {order.note && (
                 <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
                   <span className="font-medium text-slate-700">Nota del cliente:</span> {order.note}

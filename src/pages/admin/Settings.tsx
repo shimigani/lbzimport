@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import type { StoreCurrency, StoreSettings } from '../../types'
+import type { StoreCurrency, StoreSettings, WhatsAppMessages } from '../../types'
 import { friendlyError } from '../../utils/errors'
 import { validateUrl } from '../../utils/validators'
 import { getSettings, updateSettings } from '../../services/settings'
@@ -23,6 +23,8 @@ import {
 } from '../../components/ui/primitives'
 import { useToast } from '../../hooks/useToast'
 import { AssetImageField } from '../../components/admin/AssetImageField'
+import { WhatsAppTemplateEditor } from '../../components/admin/WhatsAppTemplateEditor'
+import { DEFAULT_WHATSAPP_MESSAGES, WHATSAPP_TEMPLATES } from '../../lib/whatsapp'
 
 type SettingsForm = {
   store_name: string
@@ -103,6 +105,7 @@ export function Settings() {
   const [uploading, setUploading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [messages, setMessages] = useState<WhatsAppMessages>({})
 
   useEffect(() => {
     let active = true
@@ -111,6 +114,7 @@ export function Settings() {
         if (!active) return
         if (settings) {
           setForm(toForm(settings))
+          setMessages(settings.whatsapp_messages ?? {})
           setLogoUrl(settings.logo_url)
           setSocialUrl(settings.social_image_url)
           setQrUrl(settings.qr_payment_url)
@@ -206,6 +210,7 @@ export function Settings() {
         payment_bank_name: form.payment_bank_name.trim() || null,
         payment_account_number: form.payment_account_number.trim() || null,
         payment_account_type: form.payment_account_type.trim() || null,
+        whatsapp_messages: messages,
       })
       toast('success', 'Configuración guardada correctamente.')
     } catch (err) {
@@ -280,12 +285,6 @@ export function Settings() {
             <CardHeader title="Contacto y redes sociales" />
             <div className="space-y-4 p-5">
               <Input
-                label="WhatsApp (número)"
-                placeholder="Ej. +591 70000000"
-                value={form.whatsapp_number}
-                onChange={(e) => setField('whatsapp_number', e.target.value)}
-              />
-              <Input
                 label="Facebook"
                 placeholder="https://facebook.com/tutienda"
                 value={form.facebook_url}
@@ -310,7 +309,7 @@ export function Settings() {
           </Card>
 
           <Card>
-            <CardHeader title="TikTok Ads (Pixel)" />
+            <CardHeader title="Analytics y seguimiento" />
             <div className="space-y-4 p-5">
               <Input
                 label="TikTok Pixel ID"
@@ -318,37 +317,12 @@ export function Settings() {
                 value={form.tiktok_pixel_id}
                 onChange={(e) => setField('tiktok_pixel_id', e.target.value)}
               />
-              <p className="text-xs text-slate-500">
-                Si ingresas un Pixel ID, el Pixel de TikTok se cargará en la tienda
-                pública y registrará PageView, ViewContent, AddToCart, InitiateCheckout
-                y CompletePayment. Déjalo vacío para desactivar TikTok. El Pixel ID es
-                un identificador público; el Access Token del Events API se maneja solo
-                en backend y nunca se expone al navegador.
-              </p>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader title="Meta Pixel (Facebook e Instagram Ads)" />
-            <div className="space-y-4 p-5">
               <Input
                 label="Meta Pixel ID"
                 placeholder="Ej. 123456789012345"
                 value={form.meta_pixel_id}
                 onChange={(e) => setField('meta_pixel_id', e.target.value)}
               />
-              <p className="text-xs text-slate-500">
-                Si ingresas un Pixel ID, el Pixel de Meta se cargará en la tienda
-                pública y registrará PageView, ViewContent, AddToCart, InitiateCheckout
-                y Purchase. Déjalo vacío para desactivar Meta. El Pixel ID es un
-                identificador público; no se usa Access Token en el frontend.
-              </p>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader title="Google Analytics 4" />
-            <div className="space-y-4 p-5">
               <Input
                 label="GA4 Measurement ID"
                 placeholder="Ej. G-XXXXXXXXXX"
@@ -356,10 +330,9 @@ export function Settings() {
                 onChange={(e) => setField('google_analytics_id', e.target.value)}
               />
               <p className="text-xs text-slate-500">
-                Si ingresas un Measurement ID, gtag.js se cargará en la tienda
-                pública y registrará page_view, view_item, add_to_cart,
-                begin_checkout y purchase. Déjalo vacío para desactivar GA4. El
-                Measurement ID es público y se puede usar junto con Meta y TikTok.
+                Cada campo activa su sistema de seguimiento en la tienda pública cuando no está
+                vacío (TikTok, Meta y GA4 funcionan de forma independiente). Déjalos vacíos para
+                desactivarlos. Son identificadores públicos; ningún secreto se usa en el frontend.
               </p>
             </div>
           </Card>
@@ -473,11 +446,55 @@ export function Settings() {
               </label>
             </div>
           </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader title="💬 WhatsApp" />
+            <div className="space-y-6 p-5">
+              <div className="max-w-sm">
+                <Input
+                  label="Número de WhatsApp"
+                  placeholder="Ej. +591 70000000"
+                  value={form.whatsapp_number}
+                  onChange={(e) => setField('whatsapp_number', e.target.value)}
+                />
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Número al que llegan todos los mensajes de WhatsApp de la tienda.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800">Mensajes de WhatsApp</h4>
+                <p className="mt-1 text-xs text-slate-500">
+                  Personaliza los mensajes que la tienda envía por WhatsApp. Usa las variables para
+                  insertar datos reales del pedido; la vista previa te muestra el resultado con datos
+                  de ejemplo.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {WHATSAPP_TEMPLATES.map((meta) => (
+                  <WhatsAppTemplateEditor
+                    key={meta.key}
+                    meta={meta}
+                    value={messages[meta.key] ?? ''}
+                    defaultTemplate={DEFAULT_WHATSAPP_MESSAGES[meta.key]}
+                    onChange={(next) =>
+                      setMessages((current) => ({ ...current, [meta.key]: next }))
+                    }
+                  />
+                ))}
+              </div>
+
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                Los cambios no se guardan hasta que pulses "Guardar cambios".
+              </p>
+            </div>
+          </Card>
         </div>
 
         <div className="flex justify-end">
           <Button type="submit" loading={saving}>
-            Guardar configuración
+            Guardar cambios
           </Button>
         </div>
       </form>

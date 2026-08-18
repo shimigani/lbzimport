@@ -2,6 +2,37 @@
 
 @theme {
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --color-night: #0b0b0d;
+  --color-surface: #151519;
+  --color-surface-2: #1d1d22;
+  --color-gold: #d4af37;
+  --color-gold-light: #f1d675;
+  --color-ink: #f5f5f5;
+  --color-ink-muted: #a7a7ad;
+}
+
+body {
+  background-color: var(--color-night);
+  color: var(--color-ink);
+}
+
+.store-page-bg {
+  background-color: var(--color-night);
+  background-image:
+    radial-gradient(50rem 30rem at 85% -10%, rgba(212, 175, 55, 0.08), transparent 60%),
+    radial-gradient(40rem 26rem at 5% 110%, rgba(212, 175, 55, 0.05), transparent 60%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @keyframes fade-in-up {

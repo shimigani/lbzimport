@@ -1,27 +1,53 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import type { Order, OrderStatus, Product } from '../../types'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, formatDate } from '../../utils/format'
 import { orderStatusLabel, orderStatusTone } from '../../utils/orderStatus'
 import { Alert, Badge, Card, CardHeader, EmptyState, Skeleton } from '../../components/ui/primitives'
 import { friendlyError } from '../../utils/errors'
+import {
+  BanknoteIcon,
+  BoxesIcon,
+  CheckIcon,
+  ClipboardIcon,
+  TagIcon,
+} from '../../components/store/icons'
 
 type Stats = {
   totalProducts: number
   activeProducts: number
   outOfStock: number
   pendingOrders: number
+  completedOrders: number
   totalSales: number
 }
 
-function StatCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function StatCard({
+  label,
+  value,
+  icon,
+  iconClass,
+  valueClass,
+}: {
+  label: string
+  value: string
+  icon: ReactNode
+  iconClass: string
+  valueClass?: string
+}) {
   return (
-    <Card className="p-5">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className={`mt-1.5 text-2xl font-bold ${accent ? 'text-indigo-600' : 'text-slate-900'}`}>
-        {value}
-      </p>
+    <Card className="flex items-center gap-4 p-5">
+      <span
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconClass}`}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium text-slate-500">{label}</p>
+        <p className={`mt-1 text-2xl font-bold ${valueClass ?? 'text-slate-900'}`}>{value}</p>
+      </div>
     </Card>
   )
 }
@@ -58,6 +84,7 @@ export function Dashboard() {
           activeProducts: allProducts.filter((p) => p.active).length,
           outOfStock: allProducts.filter((p) => p.stock <= 0).length,
           pendingOrders: allOrders.filter((o) => o.status === 'pending').length,
+          completedOrders: allOrders.filter((o) => o.status === 'completed').length,
           totalSales,
         })
 
@@ -97,18 +124,44 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Dashboard</h1>
         <p className="mt-0.5 text-sm text-slate-500">Resumen general de tu tienda.</p>
       </div>
 
       {error && <Alert>{error}</Alert>}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard label="Productos totales" value={String(stats?.totalProducts ?? 0)} />
-        <StatCard label="Productos activos" value={String(stats?.activeProducts ?? 0)} />
-        <StatCard label="Sin stock" value={String(stats?.outOfStock ?? 0)} accent />
-        <StatCard label="Pedidos pendientes" value={String(stats?.pendingOrders ?? 0)} accent />
-        <StatCard label="Ventas totales" value={formatCurrency(stats?.totalSales ?? 0)} />
+        <StatCard
+          label="Productos totales"
+          value={String(stats?.totalProducts ?? 0)}
+          icon={<BoxesIcon className="h-5 w-5" />}
+          iconClass="bg-indigo-50 text-indigo-600"
+        />
+        <StatCard
+          label="Pedidos pendientes"
+          value={String(stats?.pendingOrders ?? 0)}
+          icon={<ClipboardIcon className="h-5 w-5" />}
+          iconClass="bg-amber-50 text-amber-600"
+        />
+        <StatCard
+          label="Pedidos completados"
+          value={String(stats?.completedOrders ?? 0)}
+          icon={<CheckIcon className="h-5 w-5" />}
+          iconClass="bg-emerald-50 text-emerald-600"
+        />
+        <StatCard
+          label="Productos sin stock"
+          value={String(stats?.outOfStock ?? 0)}
+          icon={<TagIcon className="h-5 w-5" />}
+          iconClass="bg-red-50 text-red-600"
+          valueClass="text-red-600"
+        />
+        <StatCard
+          label="Ventas totales"
+          value={formatCurrency(stats?.totalSales ?? 0)}
+          icon={<BanknoteIcon className="h-5 w-5" />}
+          iconClass="bg-violet-50 text-violet-600"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -132,13 +185,14 @@ export function Dashboard() {
                 <li key={order.id}>
                   <Link
                     to={`/admin/orders/${order.id}`}
-                    className="flex items-center justify-between px-5 py-3 hover:bg-slate-50"
+                    className="flex items-center justify-between gap-3 px-5 py-3 transition hover:bg-slate-50"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-800">{order.order_number}</p>
-                      <p className="text-xs text-slate-500">{order.customer_name}</p>
+                      <p className="truncate text-xs text-slate-500">{order.customer_name}</p>
+                      <p className="text-xs text-slate-400">{formatDate(order.created_at)}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-3">
                       <span className="text-sm font-semibold text-slate-800">
                         {formatCurrency(order.total)}
                       </span>
@@ -170,23 +224,25 @@ export function Dashboard() {
               {lowStock.map((product) => (
                 <li
                   key={product.id}
-                  className="flex items-center justify-between px-5 py-3"
+                  className="flex items-center justify-between gap-3 px-5 py-3"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="h-9 w-9 rounded-lg object-cover"
+                        className="h-10 w-10 rounded-lg object-cover"
                       />
                     ) : (
-                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
                         —
                       </span>
                     )}
-                    <p className="text-sm font-medium text-slate-800">{product.name}</p>
+                    <p className="truncate text-sm font-medium text-slate-800">{product.name}</p>
                   </div>
-                  <Badge tone="amber">{product.stock} uds.</Badge>
+                  <Badge tone={product.stock === 0 ? 'red' : 'amber'}>
+                    {product.stock === 0 ? 'Sin stock' : `${product.stock} uds.`}
+                  </Badge>
                 </li>
               ))}
             </ul>

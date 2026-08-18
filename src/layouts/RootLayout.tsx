@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Header from '../components/store/Header'
 import Footer from '../components/store/Footer'
-import CartDrawer from '../components/store/CartDrawer'
+import CartBottomBar from '../components/store/CartBottomBar'
 import FloatingWhatsApp from '../components/store/FloatingWhatsApp'
 import { getPublicSettings } from '../services/store'
-import { DEFAULT_PRIMARY } from '../utils/theme'
 import { trackPageView as trackTikTokPageView } from '../lib/tiktok'
 import { trackPageView as trackMetaPageView } from '../lib/meta'
 import { trackPageView as trackAnalyticsPageView } from '../lib/analytics'
@@ -13,7 +12,6 @@ import { trackPageView as trackAnalyticsPageView } from '../lib/analytics'
 function RootLayout() {
   const location = useLocation()
   const [currency, setCurrency] = useState('BOB')
-  const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY)
   const lastPathRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -33,7 +31,6 @@ function RootLayout() {
     getPublicSettings().then((loaded) => {
       if (!mounted || !loaded) return
       setCurrency(loaded.currency)
-      setPrimaryColor(loaded.primary_color)
     })
     return () => {
       mounted = false
@@ -41,14 +38,14 @@ function RootLayout() {
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="store-page-bg flex min-h-screen flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
         <Outlet />
       </main>
       <Footer />
       <FloatingWhatsApp />
-      <CartDrawer currency={currency} primaryColor={primaryColor} />
+      <CartBottomBar currency={currency} />
     </div>
   )
 }
