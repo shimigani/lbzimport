@@ -10,7 +10,7 @@ import type { StoreSettings } from '../../types'
 
 function Header() {
   const navigate = useNavigate()
-  const { count } = useCart()
+  const { count, openCart } = useCart()
   const { isAdmin, loading: authLoading } = useAuth()
   const [settings, setSettings] = useState<StoreSettings | null>(null)
   const [term, setTerm] = useState('')
@@ -111,8 +111,9 @@ function Header() {
               <WhatsAppIcon className="h-5 w-5" />
             </a>
           )}
-          <Link
-            to="/checkout"
+          <button
+            type="button"
+            onClick={openCart}
             aria-label={`Ver carrito (${count} ${count === 1 ? 'producto' : 'productos'})`}
             className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition hover:bg-white/5 hover:text-gold"
           >
@@ -122,7 +123,7 @@ function Header() {
                 {count}
               </span>
             )}
-          </Link>
+          </button>
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}

@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import {
   buildWhatsAppMessage,
-  variablesForScope,
   WHATSAPP_PREVIEW_DATA,
   WHATSAPP_TEMPLATES,
+  WHATSAPP_VARIABLES,
 } from '../../lib/whatsapp'
 import { Button } from '../ui/primitives'
 import { EyeIcon, RefreshIcon } from '../store/icons'
@@ -21,7 +21,7 @@ export function WhatsAppTemplateEditor({ meta, value, defaultTemplate, onChange 
   const copiedTimer = useRef<number | null>(null)
 
   const template = value.trim() ? value : defaultTemplate
-  const variables = variablesForScope(meta.scope)
+  const variables = WHATSAPP_VARIABLES.filter((v) => meta.variables?.includes(v.name))
 
   async function copyVariable(name: string) {
     try {

@@ -3,8 +3,10 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Header from '../components/store/Header'
 import Footer from '../components/store/Footer'
 import CartBottomBar from '../components/store/CartBottomBar'
+import CartDrawer from '../components/store/CartDrawer'
 import FloatingWhatsApp from '../components/store/FloatingWhatsApp'
 import { getPublicSettings } from '../services/store'
+import { DEFAULT_PRIMARY } from '../utils/theme'
 import { trackPageView as trackTikTokPageView } from '../lib/tiktok'
 import { trackPageView as trackMetaPageView } from '../lib/meta'
 import { trackPageView as trackAnalyticsPageView } from '../lib/analytics'
@@ -12,6 +14,7 @@ import { trackPageView as trackAnalyticsPageView } from '../lib/analytics'
 function RootLayout() {
   const location = useLocation()
   const [currency, setCurrency] = useState('BOB')
+  const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY)
   const lastPathRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -31,6 +34,7 @@ function RootLayout() {
     getPublicSettings().then((loaded) => {
       if (!mounted || !loaded) return
       setCurrency(loaded.currency)
+      setPrimaryColor(loaded.primary_color)
     })
     return () => {
       mounted = false
@@ -46,6 +50,7 @@ function RootLayout() {
       <Footer />
       <FloatingWhatsApp />
       <CartBottomBar currency={currency} />
+      <CartDrawer currency={currency} primaryColor={primaryColor} />
     </div>
   )
 }

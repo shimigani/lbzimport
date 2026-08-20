@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom'
 import { useCart } from '../../hooks/useCart'
+import { useWhatsAppOrder } from '../../hooks/useWhatsAppOrder'
 import { formatCurrency } from '../../utils/format'
-import { ArrowRightIcon, CartIcon, WhatsAppIcon } from './icons'
+import { CartIcon } from './icons'
 
 type Props = {
   currency: string
@@ -9,11 +9,12 @@ type Props = {
 
 function CartBottomBar({ currency }: Props) {
   const { items, count, subtotal } = useCart()
+  const { creating, placeOrder } = useWhatsAppOrder()
 
   if (items.length === 0) return null
 
   const unitLabel = count === 1 ? 'producto' : 'productos'
-  const ariaLabel = `Realizar compra (${count} ${unitLabel}, total ${formatCurrency(
+  const ariaLabel = `Pedir por WhatsApp (${count} ${unitLabel}, total ${formatCurrency(
     subtotal,
     currency,
   )})`
@@ -43,15 +44,15 @@ function CartBottomBar({ currency }: Props) {
               {formatCurrency(subtotal, currency)}
             </span>
 
-            <Link
-              to="/checkout"
+            <button
+              type="button"
+              onClick={() => void placeOrder()}
+              disabled={creating}
               aria-label={ariaLabel}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-gold px-4 py-3 text-sm font-semibold text-night shadow-sm shadow-gold/20 transition hover:bg-gold-light active:scale-[0.98] sm:gap-2 sm:px-5"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-gold px-4 py-3 text-sm font-semibold text-night shadow-sm shadow-gold/20 transition hover:bg-gold-light active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 sm:px-5"
             >
-              <WhatsAppIcon className="hidden h-4 w-4 sm:block" />
-              Realizar compra
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
+              {creating ? 'Creando pedido...' : '💬 Pedir por WhatsApp'}
+            </button>
           </div>
         </div>
       </div>

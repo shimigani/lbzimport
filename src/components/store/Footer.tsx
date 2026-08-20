@@ -95,11 +95,6 @@ function Footer() {
                   Ofertas
                 </a>
               </li>
-              <li>
-                <Link to="/checkout" className="text-ink-muted transition hover:text-gold">
-                  Realizar pedido
-                </Link>
-              </li>
             </ul>
           </div>
 

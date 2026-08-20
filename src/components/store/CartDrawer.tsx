@@ -1,15 +1,9 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../hooks/useCart'
+import { useWhatsAppOrder } from '../../hooks/useWhatsAppOrder'
 import { formatCurrency } from '../../utils/format'
-import {
-  CloseIcon,
-  MinusIcon,
-  PlusIcon,
-  PackageIcon,
-  TrashIcon,
-  ArrowRightIcon,
-} from './icons'
+import { CloseIcon, MinusIcon, PlusIcon, PackageIcon, TrashIcon } from './icons'
 
 type Props = {
   currency: string
@@ -18,6 +12,7 @@ type Props = {
 
 function CartDrawer({ currency, primaryColor }: Props) {
   const { items, isOpen, closeCart, setQuantity, removeItem, clear, subtotal } = useCart()
+  const { creating, placeOrder } = useWhatsAppOrder()
 
   useEffect(() => {
     if (!isOpen) return
@@ -161,15 +156,15 @@ function CartDrawer({ currency, primaryColor }: Props) {
                   </span>
                 </div>
               </div>
-              <Link
-                to="/checkout"
-                onClick={closeCart}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
+              <button
+                type="button"
+                onClick={() => void placeOrder()}
+                disabled={creating}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-70 disabled:active:scale-100"
                 style={{ backgroundColor: primaryColor }}
               >
-                Continuar compra
-                <ArrowRightIcon className="h-4 w-4" />
-              </Link>
+                {creating ? 'Creando pedido...' : '💬 Pedir por WhatsApp'}
+              </button>
               <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"

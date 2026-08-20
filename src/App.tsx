@@ -10,9 +10,6 @@ import { PageSpinner } from './components/ui/primitives'
 const ProductDetail = lazy(() =>
   import('./pages/ProductDetail').then((m) => ({ default: m.default })),
 )
-const Checkout = lazy(() =>
-  import('./pages/Checkout').then((m) => ({ default: m.default })),
-)
 
 const Dashboard = lazy(() =>
   import('./pages/admin/Dashboard').then((m) => ({ default: m.Dashboard })),
@@ -46,7 +43,6 @@ function App() {
         <Route element={<RootLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/producto/:slug" element={<ProductDetail />} />
-          <Route path="/checkout" element={<Checkout />} />
         </Route>
 
         <Route path="/login" element={<Login />} />

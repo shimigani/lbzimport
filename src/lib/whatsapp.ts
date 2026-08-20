@@ -15,6 +15,7 @@ export type WhatsAppTemplateMeta = {
   emoji: string
   description: string
   scope: WhatsAppTemplateScope
+  variables?: string[]
 }
 
 export type WhatsAppVariableInfo = {
@@ -25,32 +26,12 @@ export type WhatsAppVariableInfo = {
 
 export const WHATSAPP_TEMPLATES: WhatsAppTemplateMeta[] = [
   {
-    key: 'order_cod',
-    title: 'Pago contra entrega',
-    emoji: '💵',
-    description: 'Pedido confirmado cuando el cliente paga al recibir.',
-    scope: 'order',
-  },
-  {
-    key: 'order_qr',
-    title: 'Pago por QR',
-    emoji: '📱',
-    description: 'Pedido confirmado cuando el cliente paga por QR.',
-    scope: 'order',
-  },
-  {
     key: 'order_whatsapp',
-    title: 'Confirmar por WhatsApp',
+    title: 'Pedido por WhatsApp',
     emoji: '💬',
-    description: 'Pedido confirmado directamente por WhatsApp.',
+    description: 'Mensaje que recibe el cliente al pulsar el botón Pedir por WhatsApp.',
     scope: 'order',
-  },
-  {
-    key: 'proof_qr',
-    title: 'Comprobante de pago',
-    emoji: '🧾',
-    description: 'Mensaje al adjuntar el comprobante de pago por QR.',
-    scope: 'order',
+    variables: ['{{store_name}}', '{{order_number}}', '{{products}}', '{{total}}'],
   },
   {
     key: 'product_inquiry',
@@ -58,6 +39,14 @@ export const WHATSAPP_TEMPLATES: WhatsAppTemplateMeta[] = [
     emoji: '🛒',
     description: 'Botón "Pedir por WhatsApp" en la ficha del producto.',
     scope: 'product',
+    variables: [
+      '{{product_name}}',
+      '{{product_price}}',
+      '{{product_url}}',
+      '{{quantity}}',
+      '{{store_name}}',
+      '{{store_phone}}',
+    ],
   },
   {
     key: 'contact_customer',
@@ -65,6 +54,12 @@ export const WHATSAPP_TEMPLATES: WhatsAppTemplateMeta[] = [
     emoji: '💬',
     description: 'Botón "Contactar al cliente" en el detalle del pedido.',
     scope: 'order',
+    variables: [
+      '{{customer_name}}',
+      '{{order_number}}',
+      '{{store_name}}',
+      '{{store_phone}}',
+    ],
   },
   {
     key: 'general_contact',
@@ -72,85 +67,26 @@ export const WHATSAPP_TEMPLATES: WhatsAppTemplateMeta[] = [
     emoji: '📣',
     description: 'Botones de contacto: header, footer, botón flotante e inicio.',
     scope: 'store',
+    variables: ['{{store_name}}', '{{store_phone}}'],
   },
 ]
 
 export const DEFAULT_WHATSAPP_MESSAGES: Record<WhatsAppMessageKey, string> = {
-  order_cod: [
-    'Hola 👋 Quiero confirmar mi pedido.',
-    '',
-    '🛍️ PEDIDO: {{order_number}}',
-    '',
-    '👤 Cliente: {{customer_name}}',
-    '📱 Teléfono: {{phone}}',
-    '📍 Ciudad: {{city}}',
-    '🏠 Dirección: {{address}}',
-    '📌 Referencia: {{reference}}',
-    '',
-    '🛒 PRODUCTOS:',
-    '{{products}}',
-    '',
-    '💰 Subtotal: Bs {{subtotal}}',
-    '💵 TOTAL: Bs {{total}}',
-    '',
-    '💳 Método de pago: Pago contra entrega',
-    '',
-    'Gracias.',
-  ].join('\n'),
-  order_qr: [
-    'Hola 👋 Quiero confirmar mi pedido.',
-    '',
-    '🛍️ PEDIDO: {{order_number}}',
-    '',
-    '👤 Cliente: {{customer_name}}',
-    '📱 Teléfono: {{phone}}',
-    '📍 Ciudad: {{city}}',
-    '🏠 Dirección: {{address}}',
-    '📌 Referencia: {{reference}}',
-    '',
-    '🛒 PRODUCTOS:',
-    '{{products}}',
-    '',
-    '💰 Subtotal: Bs {{subtotal}}',
-    '💵 TOTAL: Bs {{total}}',
-    '',
-    '📱 Método de pago: Pago por QR',
-    '',
-    'Adjunto mi comprobante de pago.',
-  ].join('\n'),
   order_whatsapp: [
-    'Hola 👋 Quiero confirmar mi pedido.',
+    '👋 Hola, gracias por comprar en {{store_name}}.',
     '',
-    '🛍️ PEDIDO: {{order_number}}',
+    '🧾 Número de orden: #{{order_number}}',
     '',
-    '👤 Cliente: {{customer_name}}',
-    '📱 Teléfono: {{phone}}',
-    '📍 Ciudad: {{city}}',
-    '🏠 Dirección: {{address}}',
-    '📌 Referencia: {{reference}}',
-    '',
-    '🛒 PRODUCTOS:',
+    '🛍️ Tu pedido:',
     '{{products}}',
     '',
-    '💰 Subtotal: Bs {{subtotal}}',
-    '💵 TOTAL: Bs {{total}}',
+    '💰 Total: {{total}}',
     '',
-    '💬 Método de pago: Confirmar por WhatsApp',
+    '✅ Hemos recibido tu pedido correctamente.',
     '',
-    'Gracias.',
-  ].join('\n'),
-  proof_qr: [
-    'Hola 👋 Adjunto el comprobante de pago de mi pedido.',
+    'En este momento te estamos atendiendo por WhatsApp. En breve te responderemos para coordinar tu pedido.',
     '',
-    '🛍️ Pedido: {{order_number}}',
-    '',
-    '👤 Cliente: {{customer_name}}',
-    '',
-    '💵 Total: Bs {{total}}',
-    '',
-    '📱 Método de pago: Pago por QR',
-    '',
-    'Adjunto mi comprobante.',
+    '¡Gracias por confiar en {{store_name}}! 🙌',
   ].join('\n'),
   product_inquiry:
     'Hola 👋 Me interesa el producto "{{product_name}}" (Bs {{product_price}}). ¿Está disponible?',
@@ -162,15 +98,8 @@ export const DEFAULT_WHATSAPP_MESSAGES: Record<WhatsAppMessageKey, string> = {
 export const WHATSAPP_VARIABLES: WhatsAppVariableInfo[] = [
   { name: '{{order_number}}', description: 'Número del pedido', scope: 'order' },
   { name: '{{customer_name}}', description: 'Nombre del cliente', scope: 'order' },
-  { name: '{{phone}}', description: 'Teléfono del cliente', scope: 'order' },
-  { name: '{{city}}', description: 'Ciudad', scope: 'order' },
-  { name: '{{address}}', description: 'Dirección', scope: 'order' },
-  { name: '{{reference}}', description: 'Referencia', scope: 'order' },
-  { name: '{{note}}', description: 'Nota del cliente', scope: 'order' },
   { name: '{{products}}', description: 'Lista de productos del pedido', scope: 'order' },
-  { name: '{{subtotal}}', description: 'Subtotal del pedido', scope: 'order' },
   { name: '{{total}}', description: 'Total del pedido', scope: 'order' },
-  { name: '{{payment_method}}', description: 'Método de pago seleccionado', scope: 'order' },
   { name: '{{product_name}}', description: 'Nombre del producto', scope: 'product' },
   { name: '{{product_price}}', description: 'Precio del producto', scope: 'product' },
   { name: '{{product_url}}', description: 'URL del producto', scope: 'product' },
@@ -179,28 +108,12 @@ export const WHATSAPP_VARIABLES: WhatsAppVariableInfo[] = [
   { name: '{{store_phone}}', description: 'Teléfono de la tienda', scope: 'all' },
 ]
 
-export function variablesForScope(
-  scope: WhatsAppTemplateScope,
-): WhatsAppVariableInfo[] {
-  if (scope === 'store') {
-    return WHATSAPP_VARIABLES.filter((v) => v.scope === 'all')
-  }
-  return WHATSAPP_VARIABLES.filter((v) => v.scope === scope || v.scope === 'all')
-}
-
 // Datos de ejemplo usados SOLO en la vista previa del panel (no se envía nada).
 export const WHATSAPP_PREVIEW_DATA: Record<string, string> = {
   order_number: 'ORD-000123',
   customer_name: 'Juan Pérez',
-  phone: '70000000',
-  city: 'Cochabamba',
-  address: 'Av. Ejemplo 123',
-  reference: '',
-  note: '',
-  products: '* Producto de prueba x2 — Bs 100',
-  subtotal: '100',
-  total: '100',
-  payment_method: 'Pago contra entrega',
+  products: '* Producto de prueba × 2\n* Otro producto × 1',
+  total: '150',
   product_name: 'Producto de prueba',
   product_price: '50',
   product_url: 'https://mitienda.com/producto/producto-de-prueba',
@@ -238,9 +151,9 @@ export function buildWhatsAppHref(phone: string, message: string): string {
 
 // Convierte los productos reales del pedido en una lista legible para {{products}}.
 export function formatProductLines(
-  items: { name: string; quantity: number; subtotal: number }[],
+  items: { name: string; quantity: number }[],
 ): string {
-  return items.map((item) => `* ${item.name} x${item.quantity} — Bs ${item.subtotal}`).join('\n')
+  return items.map((item) => `* ${item.name} × ${item.quantity}`).join('\n')
 }
 
 // Mensaje de contacto general (header, footer, botón flotante e inicio).

@@ -9,10 +9,10 @@ import ProductCard from '../components/store/ProductCard'
 import { Alert } from '../components/ui/primitives'
 import {
   ArrowRightIcon,
-  BanknoteIcon,
   ChatIcon,
   PackageIcon,
-  QrCodeIcon,
+  TruckIcon,
+  WhatsAppIcon,
 } from '../components/store/icons'
 import { buildGeneralContactMessage, buildWhatsAppHref } from '../lib/whatsapp'
 import type { StoreSettings } from '../types'
@@ -137,14 +137,14 @@ function Home() {
 
   const benefits = [
     {
-      icon: <QrCodeIcon className="h-5 w-5" />,
-      title: 'Pago por QR',
-      description: 'Escanea y paga de forma rápida y segura.',
+      icon: <WhatsAppIcon className="h-5 w-5" />,
+      title: 'Pedido por WhatsApp',
+      description: 'Agrega tus productos y pide directo por WhatsApp.',
     },
     {
-      icon: <BanknoteIcon className="h-5 w-5" />,
-      title: 'Pago contra entrega',
-      description: 'Paga cuando recibas tu pedido.',
+      icon: <TruckIcon className="h-5 w-5" />,
+      title: 'Entrega coordinada',
+      description: 'Coordinamos la entrega contigo por WhatsApp.',
     },
     {
       icon: <ChatIcon className="h-5 w-5" />,

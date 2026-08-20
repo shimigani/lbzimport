@@ -41,11 +41,6 @@ type SettingsForm = {
   secondary_color: string
   floating_whatsapp_enabled: boolean
   currency: StoreCurrency
-  payment_instructions: string
-  payment_account_name: string
-  payment_bank_name: string
-  payment_account_number: string
-  payment_account_type: string
 }
 
 const EMPTY_FORM: SettingsForm = {
@@ -63,11 +58,6 @@ const EMPTY_FORM: SettingsForm = {
   secondary_color: '#ffffff',
   floating_whatsapp_enabled: true,
   currency: 'BOB',
-  payment_instructions: '',
-  payment_account_name: '',
-  payment_bank_name: '',
-  payment_account_number: '',
-  payment_account_type: '',
 }
 
 function toForm(settings: StoreSettings): SettingsForm {
@@ -86,11 +76,6 @@ function toForm(settings: StoreSettings): SettingsForm {
     secondary_color: settings.secondary_color,
     floating_whatsapp_enabled: settings.floating_whatsapp_enabled,
     currency: settings.currency,
-    payment_instructions: settings.payment_instructions ?? '',
-    payment_account_name: settings.payment_account_name ?? '',
-    payment_bank_name: settings.payment_bank_name ?? '',
-    payment_account_number: settings.payment_account_number ?? '',
-    payment_account_type: settings.payment_account_type ?? '',
   }
 }
 
@@ -99,7 +84,6 @@ export function Settings() {
   const [form, setForm] = useState<SettingsForm>(EMPTY_FORM)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [socialUrl, setSocialUrl] = useState<string | null>(null)
-  const [qrUrl, setQrUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<string | null>(null)
@@ -117,7 +101,6 @@ export function Settings() {
           setMessages(settings.whatsapp_messages ?? {})
           setLogoUrl(settings.logo_url)
           setSocialUrl(settings.social_image_url)
-          setQrUrl(settings.qr_payment_url)
         }
       })
       .catch((err) => {
@@ -136,14 +119,14 @@ export function Settings() {
   }
 
   async function handleUpload(
-    kind: 'logo' | 'social' | 'qr',
+    kind: 'logo' | 'social',
     file: File,
     setUrl: (url: string | null) => void,
   ) {
     setUploading(kind)
     setError(null)
     try {
-      const current = kind === 'logo' ? logoUrl : kind === 'social' ? socialUrl : qrUrl
+      const current = kind === 'logo' ? logoUrl : socialUrl
       const { url, error: uploadError } = await uploadFile(
         STORE_ASSETS_BUCKET,
         `store-assets/${kind}`,
@@ -204,12 +187,6 @@ export function Settings() {
         currency: form.currency,
         logo_url: logoUrl,
         social_image_url: socialUrl,
-        qr_payment_url: qrUrl,
-        payment_instructions: form.payment_instructions.trim() || null,
-        payment_account_name: form.payment_account_name.trim() || null,
-        payment_bank_name: form.payment_bank_name.trim() || null,
-        payment_account_number: form.payment_account_number.trim() || null,
-        payment_account_type: form.payment_account_type.trim() || null,
         whatsapp_messages: messages,
       })
       toast('success', 'Configuración guardada correctamente.')
@@ -333,58 +310,6 @@ export function Settings() {
                 Cada campo activa su sistema de seguimiento en la tienda pública cuando no está
                 vacío (TikTok, Meta y GA4 funcionan de forma independiente). Déjalos vacíos para
                 desactivarlos. Son identificadores públicos; ningún secreto se usa en el frontend.
-              </p>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader title="Pago con QR" />
-            <div className="space-y-4 p-5">
-              <AssetImageField
-                label="QR de pago"
-                url={qrUrl}
-                uploading={uploading === 'qr'}
-                hint="Imagen del QR del banco o cuenta donde el cliente realizará el pago."
-                onUpload={(file) => handleUpload('qr', file, setQrUrl)}
-                onRemove={() => handleRemove(qrUrl, setQrUrl)}
-              />
-              <Textarea
-                label="Instrucciones de pago"
-                rows={3}
-                placeholder="Ej. Realiza el pago con tu banco y envía el comprobante por WhatsApp."
-                value={form.payment_instructions}
-                onChange={(e) => setField('payment_instructions', e.target.value)}
-              />
-              <Input
-                label="Titular de la cuenta"
-                placeholder="Ej. María García"
-                value={form.payment_account_name}
-                onChange={(e) => setField('payment_account_name', e.target.value)}
-              />
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Input
-                  label="Banco / entidad"
-                  placeholder="Ej. Banco Unión"
-                  value={form.payment_bank_name}
-                  onChange={(e) => setField('payment_bank_name', e.target.value)}
-                />
-                <Input
-                  label="Número de cuenta"
-                  placeholder="Ej. 1234567890"
-                  value={form.payment_account_number}
-                  onChange={(e) => setField('payment_account_number', e.target.value)}
-                />
-                <Input
-                  label="Tipo de cuenta"
-                  placeholder="Ej. Caja de ahorros"
-                  value={form.payment_account_type}
-                  onChange={(e) => setField('payment_account_type', e.target.value)}
-                />
-              </div>
-              <p className="text-xs text-slate-500">
-                Todos los campos son opcionales. El cliente los verá en el checkout después de
-                crear su pedido. Si no subes un QR, se mostrará un aviso para contactarse por
-                WhatsApp.
               </p>
             </div>
           </Card>

@@ -91,10 +91,7 @@ export type OrderWithItems = Order & {
 export type StoreCurrency = 'BOB' | 'USD'
 
 export type WhatsAppMessageKey =
-  | 'order_cod'
-  | 'order_qr'
   | 'order_whatsapp'
-  | 'proof_qr'
   | 'product_inquiry'
   | 'contact_customer'
   | 'general_contact'
