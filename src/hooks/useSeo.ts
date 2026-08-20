@@ -50,17 +50,17 @@ export function useSeo({
   useEffect(() => {
     document.title = title
     setProperty('og:title', title)
-    setProperty('twitter:title', title)
+    setMeta('twitter:title', title)
 
     if (description) {
       setMeta('description', description)
       setProperty('og:description', description)
-      setProperty('twitter:description', description)
+      setMeta('twitter:description', description)
     }
 
     if (image) {
       setProperty('og:image', image)
-      setProperty('twitter:image', image)
+      setMeta('twitter:image', image)
     }
 
     if (canonical) {

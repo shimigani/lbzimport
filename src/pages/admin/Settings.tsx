@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { StoreCurrency, StoreSettings, WhatsAppMessages } from '../../types'
 import { friendlyError } from '../../utils/errors'
@@ -19,12 +19,14 @@ import {
   PageHeader,
   Select,
   Skeleton,
+  Spinner,
   Textarea,
 } from '../../components/ui/primitives'
 import { useToast } from '../../hooks/useToast'
 import { AssetImageField } from '../../components/admin/AssetImageField'
 import { WhatsAppTemplateEditor } from '../../components/admin/WhatsAppTemplateEditor'
 import { DEFAULT_WHATSAPP_MESSAGES, WHATSAPP_TEMPLATES } from '../../lib/whatsapp'
+import { resolveShareImage } from '../../lib/share'
 
 type SettingsForm = {
   store_name: string
@@ -90,6 +92,7 @@ export function Settings() {
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [messages, setMessages] = useState<WhatsAppMessages>({})
+  const socialInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     let active = true
@@ -146,13 +149,17 @@ export function Settings() {
     }
   }
 
-  async function handleRemove(url: string | null, setUrl: (url: string | null) => void) {
+  async function handleRemove(
+    url: string | null,
+    setUrl: (url: string | null) => void,
+    successMessage = 'Imagen eliminada.',
+  ) {
     if (!url) return
     try {
       const oldPath = pathFromUrl(STORE_ASSETS_BUCKET, url)
       if (oldPath) await deleteFile(STORE_ASSETS_BUCKET, oldPath)
       setUrl(null)
-      toast('success', 'Imagen eliminada.')
+      toast('success', successMessage)
     } catch (err) {
       toast('error', `Error al eliminar la imagen: ${friendlyError(err)}`)
     }
@@ -247,14 +254,78 @@ export function Settings() {
                 onUpload={(file) => handleUpload('logo', file, setLogoUrl)}
                 onRemove={() => handleRemove(logoUrl, setLogoUrl)}
               />
-              <AssetImageField
-                label="Imagen para compartir"
-                url={socialUrl}
-                uploading={uploading === 'social'}
-                hint="Se usa al compartir la tienda en redes sociales."
-                onUpload={(file) => handleUpload('social', file, setSocialUrl)}
-                onRemove={() => handleRemove(socialUrl, setSocialUrl)}
-              />
+              <p className="text-xs text-slate-500">
+                El logo se muestra en el header y el footer de la tienda. La imagen para compartir
+                se configura por separado, abajo.
+              </p>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader title="Imagen para compartir" />
+            <div className="space-y-4 p-5">
+              <p className="text-sm text-slate-500">
+                Esta imagen aparecerá cuando compartas tu tienda por WhatsApp, Facebook y otras
+                redes sociales.
+              </p>
+
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                <img
+                  src={socialUrl ?? resolveShareImage(null, window.location.origin) ?? undefined}
+                  alt="Vista previa de la imagen para compartir"
+                  className="h-full w-full object-cover"
+                />
+                {uploading === 'social' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                    <Spinner />
+                  </div>
+                )}
+                {!socialUrl && (
+                  <span className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white">
+                    Imagen predeterminada
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={uploading === 'social'}
+                  onClick={() => socialInputRef.current?.click()}
+                >
+                  {socialUrl ? 'Reemplazar' : 'Subir imagen'}
+                </Button>
+                {socialUrl && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    disabled={uploading === 'social'}
+                    onClick={() =>
+                      void handleRemove(socialUrl, setSocialUrl, 'Imagen restaurada a la predeterminada.')
+                    }
+                  >
+                    Restaurar predeterminada
+                  </Button>
+                )}
+                <input
+                  ref={socialInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) void handleUpload('social', file, setSocialUrl)
+                    e.target.value = ''
+                  }}
+                />
+              </div>
+
+              <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                Recomendado: 1200 × 630 px (JPG, PNG o WebP, máximo 5 MB). Se aceptan otras
+                proporciones sin romper el diseño. Los cambios no se guardan hasta que pulses
+                "Guardar cambios".
+              </p>
             </div>
           </Card>
 

@@ -18,6 +18,7 @@ import {
   getWhatsAppTemplate,
 } from '../lib/whatsapp'
 import ProductCard from '../components/store/ProductCard'
+import { resolveShareImage } from '../lib/share'
 import type { StoreSettings } from '../types'
 
 function QuantityStepper({
@@ -131,7 +132,10 @@ function ProductDetail() {
   useSeo({
     title: product ? `${product.name} | ${settings?.store_name ?? 'Mi Tienda'}` : 'Producto',
     description: product?.short_description ?? undefined,
-    image: product?.image_url ?? settings?.social_image_url ?? undefined,
+    image:
+      product?.image_url ??
+      settings?.social_image_url ??
+      resolveShareImage(null),
     canonical: product ? `${window.location.origin}/producto/${product.slug}` : undefined,
   })
 

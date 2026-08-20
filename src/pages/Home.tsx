@@ -15,6 +15,7 @@ import {
   WhatsAppIcon,
 } from '../components/store/icons'
 import { buildGeneralContactMessage, buildWhatsAppHref } from '../lib/whatsapp'
+import { resolveShareImage } from '../lib/share'
 import type { StoreSettings } from '../types'
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -89,8 +90,8 @@ function Home() {
   useSeo({
     title: `${storeName} | Tienda`,
     description: settings?.description ?? undefined,
-    image: settings?.social_image_url ?? undefined,
-    canonical: window.location.origin,
+    image: settings?.social_image_url ?? resolveShareImage(null),
+    canonical: `${window.location.origin}/`,
     favicon: settings?.logo_url ?? undefined,
   })
 
