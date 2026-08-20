@@ -78,8 +78,6 @@ export function buildMetaHtml(input: {
     ${metaTag('og:description', description)}
     ${metaTag('og:url', url)}
     ${metaTag('og:image', image)}
-    ${metaTag('og:image:width', '1200')}
-    ${metaTag('og:image:height', '630')}
     ${metaTag('og:image:alt', storeName)}
     ${nameTag('twitter:card', 'summary_large_image')}
     ${nameTag('twitter:title', title)}
@@ -101,8 +99,6 @@ async function fetchJson(url: string, apikey: string): Promise<unknown> {
 
 export default async function middleware(request: Request): Promise<Response | undefined> {
   if (request.method !== 'GET') return undefined
-  const accept = request.headers.get('accept') ?? ''
-  if (!accept.includes('text/html')) return undefined
   const userAgent = request.headers.get('user-agent') ?? ''
   if (!isSocialCrawler(userAgent)) return undefined
 
